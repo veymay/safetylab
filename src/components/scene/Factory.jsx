@@ -17,7 +17,7 @@ export function Floor({ color, onFloorClick }) {
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, 0, ROOM_CENTER_Z]}
       onClick={onFloorClick}
-      receiveShadow
+
     >
       <planeGeometry args={[ROOM_HALF_WIDTH * 2, ROOM_DEPTH]} />
       <meshStandardMaterial color={color} roughness={0.9} metalness={0.05} />
@@ -186,11 +186,11 @@ function PressMachine({ position }) {
   ];
   return (
     <group position={position}>
-      <mesh position={[0, 0.9, 0]} castShadow>
+      <mesh position={[0, 0.9, 0]}>
         <boxGeometry args={[1.6, 1.8, 1.4]} />
         <meshStandardMaterial color="#3a4148" metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 1.95, 0]} castShadow>
+      <mesh position={[0, 1.95, 0]}>
         <boxGeometry args={[1.9, 0.3, 1.7]} />
         <meshStandardMaterial color="#f2b705" metalness={0.3} roughness={0.5} />
       </mesh>
@@ -211,11 +211,11 @@ function PressMachine({ position }) {
 function LockoutStation({ position }) {
   return (
     <group position={position}>
-      <mesh position={[0, 1, 0]} castShadow>
+      <mesh position={[0, 1, 0]}>
         <boxGeometry args={[0.05, 2, 0.05]} />
         <meshStandardMaterial color="#4b5563" metalness={0.6} />
       </mesh>
-      <mesh position={[0, 1.5, 0.03]} castShadow>
+      <mesh position={[0, 1.5, 0.03]}>
         <boxGeometry args={[0.6, 0.45, 0.05]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.6} />
       </mesh>
@@ -244,7 +244,7 @@ function ConveyorBelt({ position }) {
   });
   return (
     <group position={position}>
-      <mesh position={[0, 0.4, 0]} castShadow>
+      <mesh position={[0, 0.4, 0]}>
         <boxGeometry args={[3.2, 0.5, 1]} />
         <meshStandardMaterial color="#23272b" roughness={0.7} />
       </mesh>
@@ -252,11 +252,11 @@ function ConveyorBelt({ position }) {
         <boxGeometry args={[2.9, 0.05, 0.9]} />
         <meshStandardMaterial color="#f2b705" emissive="#f2b705" emissiveIntensity={0.3} />
       </mesh>
-      <mesh position={[-1.5, 0.35, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[-1.5, 0.35, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.25, 0.25, 1, 16]} />
         <meshStandardMaterial color="#111315" metalness={0.5} />
       </mesh>
-      <mesh position={[1.5, 0.35, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[1.5, 0.35, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.25, 0.25, 1, 16]} />
         <meshStandardMaterial color="#111315" metalness={0.5} />
       </mesh>
@@ -268,7 +268,7 @@ function ConveyorBelt({ position }) {
 function CompressorUnit({ position }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.6, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <mesh position={[0, 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.4, 0.4, 1.2, 20]} />
         <meshStandardMaterial color="#5b636b" metalness={0.5} roughness={0.4} />
       </mesh>
@@ -285,15 +285,15 @@ function CompressorUnit({ position }) {
 function PPERack({ position }) {
   return (
     <group position={position}>
-      <mesh position={[0, 1, 0]} castShadow>
+      <mesh position={[0, 1, 0]}>
         <boxGeometry args={[0.06, 2, 0.06]} />
         <meshStandardMaterial color="#4b5563" metalness={0.6} />
       </mesh>
-      <mesh position={[0, 1.7, 0]} castShadow>
+      <mesh position={[0, 1.7, 0]}>
         <sphereGeometry args={[0.22, 16, 16, 0, Math.PI * 2, 0, Math.PI / 1.8]} />
         <meshStandardMaterial color="#f2b705" roughness={0.5} />
       </mesh>
-      <mesh position={[0, 1.05, 0.05]} castShadow>
+      <mesh position={[0, 1.05, 0.05]}>
         <boxGeometry args={[0.45, 0.55, 0.12]} />
         <meshStandardMaterial color="#eab308" roughness={0.6} />
       </mesh>
@@ -313,7 +313,7 @@ function ElectricalPanel({ position }) {
   });
   return (
     <group position={position}>
-      <mesh position={[0, 1.1, 0]} castShadow>
+      <mesh position={[0, 1.1, 0]}>
         <boxGeometry args={[1.8, 2.2, 0.4]} />
         <meshStandardMaterial color="#2b3138" metalness={0.4} roughness={0.5} />
       </mesh>
@@ -336,7 +336,7 @@ function ElectricalPanel({ position }) {
 function DamagedCable({ position, resolved }) {
   return (
     <group position={position}>
-      <mesh rotation={[0, 0.4, Math.PI / 2]} castShadow>
+      <mesh rotation={[0, 0.4, Math.PI / 2]}>
         <cylinderGeometry args={[0.05, 0.05, 2.4, 10]} />
         <meshStandardMaterial color="#1a1a1a" roughness={0.6} />
       </mesh>
@@ -391,12 +391,12 @@ function OverloadedOutlet({ position, resolved }) {
   const plugAngles = resolved ? [-0.15, 0.15] : [-0.5, -0.15, 0.2, 0.5];
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh>
         <boxGeometry args={[0.55, 0.14, 0.14]} />
         <meshStandardMaterial color="#e5e7eb" roughness={0.5} />
       </mesh>
       {plugAngles.map((a, i) => (
-        <mesh key={i} position={[-0.2 + i * 0.14, 0.1, 0]} rotation={[0, 0, a]} castShadow>
+        <mesh key={i} position={[-0.2 + i * 0.14, 0.1, 0]} rotation={[0, 0, a]}>
           <boxGeometry args={[0.05, 0.16, 0.1]} />
           <meshStandardMaterial color={resolved ? "#4b5563" : "#1f2937"} />
         </mesh>
@@ -420,11 +420,11 @@ function GasCylinderRack({ position }) {
     <group position={position}>
       {offsets.map((x) => (
         <group key={x} position={[x, 0, 0]}>
-          <mesh position={[0, 0.75, 0]} castShadow>
+          <mesh position={[0, 0.75, 0]}>
             <cylinderGeometry args={[0.22, 0.22, 1.5, 16]} />
             <meshStandardMaterial color="#b91c1c" metalness={0.4} roughness={0.4} />
           </mesh>
-          <mesh position={[0, 1.55, 0]} castShadow>
+          <mesh position={[0, 1.55, 0]}>
             <sphereGeometry args={[0.22, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <meshStandardMaterial color="#7f1d1d" metalness={0.4} roughness={0.4} />
           </mesh>
@@ -439,15 +439,15 @@ function GasCylinderRack({ position }) {
 function ExtinguisherStation({ position }) {
   return (
     <group position={position}>
-      <mesh position={[0, 1, -0.1]} castShadow>
+      <mesh position={[0, 1, -0.1]}>
         <boxGeometry args={[0.5, 0.7, 0.08]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.6} />
       </mesh>
-      <mesh position={[0, 0.9, 0.05]} castShadow>
+      <mesh position={[0, 0.9, 0.05]}>
         <cylinderGeometry args={[0.12, 0.14, 0.55, 16]} />
         <meshStandardMaterial color="#dc2626" metalness={0.3} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 1.2, 0.05]} castShadow>
+      <mesh position={[0, 1.2, 0.05]}>
         <cylinderGeometry args={[0.04, 0.06, 0.15, 12]} />
         <meshStandardMaterial color="#1f2937" />
       </mesh>
@@ -464,7 +464,7 @@ function VentDuct({ position }) {
   });
   return (
     <group position={position}>
-      <mesh castShadow>
+      <mesh>
         <boxGeometry args={[0.7, 0.7, 0.4]} />
         <meshStandardMaterial color="#6b7280" metalness={0.5} roughness={0.5} />
       </mesh>
@@ -484,7 +484,7 @@ function BlockedExit({ position, resolved }) {
   ];
   return (
     <group position={position}>
-      <mesh position={[0, 1.4, -0.15]} castShadow>
+      <mesh position={[0, 1.4, -0.15]}>
         <boxGeometry args={[1.2, 2.2, 0.1]} />
         <meshStandardMaterial color="#4b5563" roughness={0.6} />
       </mesh>
@@ -498,7 +498,7 @@ function BlockedExit({ position, resolved }) {
       </mesh>
       {!resolved &&
         crateOffsets.map((p, i) => (
-          <mesh key={i} position={p} castShadow>
+          <mesh key={i} position={p}>
             <boxGeometry args={[0.5, 0.5, 0.5]} />
             <meshStandardMaterial color="#a16207" roughness={0.8} />
           </mesh>

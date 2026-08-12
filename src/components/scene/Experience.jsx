@@ -27,16 +27,16 @@ const DROP_RADIUS = 1.4;
 
 /* ---------------- O'yin ichi HUD (kalla bilan birga yuradi) ---------------- */
 
-// Diqqat: bu komponent zonaga kirib-chiqqan sari qayta-qayta
-// mount/unmount bo'lmasligi kerak — har bir mount yangi GPU geometriyasi
-// yaratadi, va tez-tez takrorlansa (xona bo'ylab yurganda ko'p marta
-// sodir bo'ladi) mobil GPU drayverini haddan tashqari band qilib,
-// WebGL kontekstini yo'qotishga olib kelishi mumkin. Shu sabab u doim
-// mount holida qoladi, faqat `visible` va material/matn qiymatlari
-// almashtiriladi.
-function ViewportAlert({ zone }) {
+// Ogohlantirish endi ekranga emas, aynan xavf tug'dirayotgan stansiya
+// (pres/shchit/gaz ombori) tepasiga osiladi — foydalanuvchi qaysi
+// uskunadan xavf borligini aniq ko'radi. Har doim mount holida qoladi
+// (faqat `visible`/matn almashadi) — sababi yuqorida: tez-tez
+// mount/unmount GPU drayverini band qilib, WebGL kontekstini
+// yo'qotishga olib kelishi mumkin.
+function ZoneAlert({ zone, stationPosition }) {
   const groupRef = useRef(null);
   const alert = ZONE_ALERTS[zone] ?? ZONE_ALERTS.danger;
+  const anchor = stationPosition ?? [0, 0, -6];
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return;
@@ -50,25 +50,24 @@ function ViewportAlert({ zone }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, -0.05, 0]}>
-      <RoundedBox args={[1.5, 0.5, 0.13]} radius={0.04} smoothness={4} raycast={() => null} renderOrder={999}>
-        <meshBasicMaterial color={alert.color} transparent opacity={0.92} depthTest={false} />
+    <Billboard ref={groupRef} position={[anchor[0], 2.6, anchor[2]]}>
+      <RoundedBox args={[2, 0.55, 0.13]} radius={0.05} smoothness={4} raycast={() => null} renderOrder={997}>
+        <meshBasicMaterial color={alert.color} transparent opacity={0.94} />
       </RoundedBox>
       <Text
         position={[0, 0, 0.075]}
-        fontSize={0.08}
+        fontSize={0.1}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.4}
+        maxWidth={1.85}
         textAlign="center"
-        material-depthTest={false}
-        renderOrder={1000}
+        renderOrder={998}
         raycast={() => null}
       >
         {alert.label}
       </Text>
-    </group>
+    </Billboard>
   );
 }
 
@@ -117,7 +116,13 @@ function StatusPanel({ hazardsFound, hazardsTotal, violations, allFound, onFinis
           if (allFound) onFinish();
         }}
       >
-        <RoundedBox args={[0.58, 0.14, 0.14]} radius={0.04} smoothness={4} renderOrder={999}>
+        <RoundedBox
+          args={[0.58, 0.14, 0.14]}
+          radius={0.04}
+          smoothness={4}
+          renderOrder={999}
+          raycast={allFound ? undefined : () => null}
+        >
           <meshBasicMaterial color="#cba86a" depthTest={false} />
         </RoundedBox>
         <Text
@@ -155,7 +160,7 @@ function CrateStack({ onPick }) {
       }}
     >
       {offsets.map((p, i) => (
-        <RoundedBox key={i} args={[0.45, 0.45, 0.45]} radius={0.03} smoothness={2} position={p} castShadow>
+        <RoundedBox key={i} args={[0.45, 0.45, 0.45]} radius={0.03} smoothness={2} position={p}>
           <meshStandardMaterial color="#a16207" roughness={0.8} />
         </RoundedBox>
       ))}
@@ -216,6 +221,7 @@ function PlayerController({
   const dangerSoundTimer = useRef(0);
   const droppedGuard = useRef(false);
   const [vrZone, setVrZone] = useState("safe");
+  const [alertStationPos, setAlertStationPos] = useState(null);
 
   useEffect(() => {
     if (carrying) droppedGuard.current = false;
@@ -252,6 +258,7 @@ function PlayerController({
     }
 
     let worstZone = "safe";
+    let worstStation = null;
     stations.forEach((station) => {
       const dx = rigPos.current.x - station.position[0];
       const dz = rigPos.current.z - station.position[2];
@@ -266,11 +273,15 @@ function PlayerController({
         noticedStations.current.add(station.id);
         onStationNoticed(station.hazard.id);
       }
-      if (ZONE_RANK[zone] > ZONE_RANK[worstZone]) worstZone = zone;
+      if (ZONE_RANK[zone] > ZONE_RANK[worstZone]) {
+        worstZone = zone;
+        worstStation = station;
+      }
     });
     if (worstZone !== lastOverallZone.current) {
       lastOverallZone.current = worstZone;
       setVrZone(worstZone);
+      if (worstStation) setAlertStationPos(worstStation.position);
     }
 
     if (worstZone === "danger") {
@@ -317,8 +328,8 @@ function PlayerController({
           maxPolarAngle={Math.PI / 2.05}
         />
       )}
+      <ZoneAlert zone={vrZone} stationPosition={alertStationPos} />
       <group ref={hudAnchorRef}>
-        <ViewportAlert zone={vrZone} />
         <StatusPanel
           hazardsFound={hazardsFound}
           hazardsTotal={hazardsTotal}
@@ -352,7 +363,13 @@ function HazardTooltip({ hazard, onClose }) {
 
   return (
     <Billboard position={anchorPos} visible={visible}>
-      <RoundedBox args={[1.5, 0.55, 0.12]} radius={0.035} smoothness={4} renderOrder={998}>
+      <RoundedBox
+        args={[1.5, 0.55, 0.12]}
+        radius={0.035}
+        smoothness={4}
+        renderOrder={998}
+        raycast={() => null}
+      >
         <meshBasicMaterial color="#0f2134" transparent opacity={0.92} depthTest={false} />
       </RoundedBox>
       <Text
@@ -365,6 +382,7 @@ function HazardTooltip({ hazard, onClose }) {
         textAlign="center"
         material-depthTest={false}
         renderOrder={999}
+        raycast={() => null}
       >
         {title}
       </Text>
@@ -379,11 +397,12 @@ function HazardTooltip({ hazard, onClose }) {
         lineHeight={1.3}
         material-depthTest={false}
         renderOrder={999}
+        raycast={() => null}
       >
         {shortDescription}
       </Text>
       <group position={[0.62, 0.2, 0.07]} onClick={handleClose}>
-        <mesh renderOrder={999}>
+        <mesh renderOrder={999} raycast={visible ? undefined : () => null}>
           <circleGeometry args={[0.06, 16]} />
           <meshBasicMaterial color="#e5342a" depthTest={false} />
         </mesh>
@@ -395,6 +414,7 @@ function HazardTooltip({ hazard, onClose }) {
           anchorY="middle"
           material-depthTest={false}
           renderOrder={1000}
+          raycast={() => null}
         >
           X
         </Text>
@@ -502,7 +522,6 @@ export default function Experience({
         </div>
       )}
       <Canvas
-        shadows
         dpr={[1, 1.5]}
         camera={{ position: [0, EYE_HEIGHT, 8], fov: 60 }}
         style={{ touchAction: "none" }}
@@ -512,16 +531,7 @@ export default function Experience({
           <color attach="background" args={[theme.fogColor]} />
           <fog attach="fog" args={[theme.fogColor, 12, 32]} />
           <hemisphereLight args={["#ffffff", "#41494f", 0.9]} />
-          <directionalLight
-            position={[6, 8, 4]}
-            intensity={1.1}
-            castShadow
-            shadow-mapSize={[1024, 1024]}
-            shadow-camera-left={-16}
-            shadow-camera-right={16}
-            shadow-camera-top={10}
-            shadow-camera-bottom={-10}
-          />
+          <directionalLight position={[6, 8, 4]} intensity={1.1} />
           <directionalLight position={[-5, 4, 6]} intensity={0.25} color="#bcd4ff" />
 
           <Factory theme={theme} stations={stations} foundIds={foundIds} onFloorClick={handleFloorClick} />
