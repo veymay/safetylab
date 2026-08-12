@@ -11,7 +11,6 @@ import InstructionsScreen from "@/components/screens/InstructionsScreen";
 import FeedbackScreen from "@/components/screens/FeedbackScreen";
 import QuizScreen from "@/components/screens/QuizScreen";
 import ResultScreen from "@/components/screens/ResultScreen";
-import HUD from "@/components/ui/HUD";
 
 const Experience = dynamic(() => import("@/components/scene/Experience"), {
   ssr: false,
@@ -36,7 +35,6 @@ export default function TrainingApp() {
   const [stage, setStage] = useState(STAGES.INSTRUCTIONS);
   const [foundIds, setFoundIds] = useState([]);
   const [violations, setViolations] = useState(0);
-  const [zone, setZone] = useState("safe");
   const [activeHazardId, setActiveHazardId] = useState(null);
   const [breakdown, setBreakdown] = useState(null);
 
@@ -54,7 +52,6 @@ export default function TrainingApp() {
   function resetProgress() {
     setFoundIds([]);
     setViolations(0);
-    setZone("safe");
     setActiveHazardId(null);
     setBreakdown(null);
   }
@@ -133,20 +130,15 @@ export default function TrainingApp() {
         stations={stations}
         hazards={hazards}
         foundIds={foundIds}
-        onHazardSelect={handleHazardSelect}
-        onHazardAutoFound={handleHazardAutoFound}
-        onZoneChange={setZone}
-        onDangerEnter={handleDangerEnter}
-        xrStore={xrStore}
-      />
-      <HUD
-        zone={zone}
-        hazards={allHazardDefs}
-        foundIds={foundIds}
+        hazardsTotal={allHazardDefs.length}
         violations={violations}
         activeHazard={activeHazard}
+        onHazardSelect={handleHazardSelect}
+        onHazardAutoFound={handleHazardAutoFound}
         onCloseHazardInfo={() => setActiveHazardId(null)}
+        onDangerEnter={handleDangerEnter}
         onFinish={() => setStage(STAGES.FEEDBACK)}
+        xrStore={xrStore}
       />
     </div>
   );

@@ -2,10 +2,13 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 
 const ROOM_HALF_WIDTH = 15;
-const ROOM_DEPTH = 12;
-const ROOM_CENTER_Z = -ROOM_DEPTH / 2 + 4;
+const ROOM_BACK_Z = -10;
+const ROOM_FRONT_Z = 7;
+const ROOM_DEPTH = ROOM_FRONT_Z - ROOM_BACK_Z;
+const ROOM_CENTER_Z = (ROOM_FRONT_Z + ROOM_BACK_Z) / 2;
 const WALL_HEIGHT = 4.2;
 
 export function Floor({ color, onFloorClick }) {
@@ -31,11 +34,54 @@ function ZoneRing({ position, radius, color }) {
   );
 }
 
+function WallPoster({ position, rotationY = 0, title, body, accent }) {
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh>
+        <boxGeometry args={[1.7, 1.15, 0.04]} />
+        <meshStandardMaterial color="#f4f1ea" roughness={0.85} />
+      </mesh>
+      <mesh position={[0, 0.42, 0.021]}>
+        <boxGeometry args={[1.7, 0.26, 0.01]} />
+        <meshStandardMaterial color={accent} />
+      </mesh>
+      <Text
+        position={[0, 0.42, 0.03]}
+        fontSize={0.09}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.5}
+        textAlign="center"
+      >
+        {title}
+      </Text>
+      <Text
+        position={[0, -0.05, 0.03]}
+        fontSize={0.068}
+        color="#1f2937"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.45}
+        textAlign="center"
+        lineHeight={1.5}
+      >
+        {body}
+      </Text>
+    </group>
+  );
+}
+
 function Shell({ wallColor }) {
   return (
     <group>
       {/* orqa devor */}
-      <mesh position={[0, WALL_HEIGHT / 2, -ROOM_DEPTH + 4]}>
+      <mesh position={[0, WALL_HEIGHT / 2, ROOM_BACK_Z]}>
+        <boxGeometry args={[ROOM_HALF_WIDTH * 2, WALL_HEIGHT, 0.2]} />
+        <meshStandardMaterial color={wallColor} roughness={0.8} />
+      </mesh>
+      {/* old devor (kirish tomoni ham yopiq) */}
+      <mesh position={[0, WALL_HEIGHT / 2, ROOM_FRONT_Z]}>
         <boxGeometry args={[ROOM_HALF_WIDTH * 2, WALL_HEIGHT, 0.2]} />
         <meshStandardMaterial color={wallColor} roughness={0.8} />
       </mesh>
@@ -62,7 +108,11 @@ function Shell({ wallColor }) {
         </mesh>
       ))}
       {/* devor-pol plintusi */}
-      <mesh position={[0, 0.1, -ROOM_DEPTH + 4.09]}>
+      <mesh position={[0, 0.1, ROOM_BACK_Z + 0.09]}>
+        <boxGeometry args={[ROOM_HALF_WIDTH * 2, 0.2, 0.05]} />
+        <meshStandardMaterial color="#171a1c" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.1, ROOM_FRONT_Z - 0.09]}>
         <boxGeometry args={[ROOM_HALF_WIDTH * 2, 0.2, 0.05]} />
         <meshStandardMaterial color="#171a1c" roughness={0.9} />
       </mesh>
@@ -74,6 +124,40 @@ function Shell({ wallColor }) {
         <boxGeometry args={[0.05, 0.2, ROOM_DEPTH]} />
         <meshStandardMaterial color="#171a1c" roughness={0.9} />
       </mesh>
+
+      {/* Xavfsizlik posterlari */}
+      <WallPoster
+        position={[-9.5, 2.1, ROOM_BACK_Z + 0.13]}
+        title="MEXANIK XAVFSIZLIK"
+        accent="#eab308"
+        body={"Ishlayotgan uskunaga\nqo'l tekkizmang.\nErkin kiyim kiymang."}
+      />
+      <WallPoster
+        position={[0, 2.1, ROOM_BACK_Z + 0.13]}
+        title="ELEKTR XAVFSIZLIGI"
+        accent="#2563eb"
+        body={"Shchitga yaqinlashmang.\nShikastlangan kabelga\nqo'l tekkizmang."}
+      />
+      <WallPoster
+        position={[9.5, 2.1, ROOM_BACK_Z + 0.13]}
+        title="YONG'IN XAVFSIZLIGI"
+        accent="#dc2626"
+        body={"Ochiq olov taqiqlanadi.\nChiqish yo'lini\nbekitmang."}
+      />
+      <WallPoster
+        position={[-ROOM_HALF_WIDTH + 0.13, 2.1, -5]}
+        rotationY={Math.PI / 2}
+        title="SHAXSIY HIMOYA"
+        accent="#16a34a"
+        body={"Kaska va maxsus\npoyabzalsiz sexga\nkirish taqiqlanadi."}
+      />
+      <WallPoster
+        position={[ROOM_HALF_WIDTH - 0.13, 2.1, 2]}
+        rotationY={-Math.PI / 2}
+        title="FAVQULODDA HOLAT"
+        accent="#f97316"
+        body={"Signal bering.\nYig'ilish nuqtasiga\ntinch harakatlaning."}
+      />
     </group>
   );
 }
@@ -250,48 +334,62 @@ function ElectricalPanel({ position }) {
   );
 }
 
-function DamagedCable({ position }) {
+function DamagedCable({ position, resolved }) {
   return (
     <group position={position}>
       <mesh rotation={[0, 0.4, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.05, 0.05, 2.4, 10]} />
         <meshStandardMaterial color="#1a1a1a" roughness={0.6} />
       </mesh>
-      <mesh position={[0.3, 0.06, 0.1]}>
-        <sphereGeometry args={[0.08, 10, 10]} />
-        <meshStandardMaterial color="#ff9800" emissive="#ff5a00" emissiveIntensity={0.8} />
-      </mesh>
+      {!resolved && (
+        <mesh position={[0.3, 0.06, 0.1]}>
+          <sphereGeometry args={[0.08, 10, 10]} />
+          <meshStandardMaterial color="#ff9800" emissive="#ff5a00" emissiveIntensity={0.8} />
+        </mesh>
+      )}
+      {resolved && (
+        <mesh position={[0.3, 0.08, 0.1]}>
+          <torusGeometry args={[0.09, 0.025, 8, 16]} />
+          <meshStandardMaterial color="#16a34a" emissive="#16a34a" emissiveIntensity={0.5} />
+        </mesh>
+      )}
       <mesh position={[-0.9, 0.35, -0.1]} rotation={[0, Math.PI / 5, 0]}>
         <coneGeometry args={[0.28, 0.5, 4]} />
-        <meshStandardMaterial color="#f2b705" />
+        <meshStandardMaterial color={resolved ? "#4b5563" : "#f2b705"} />
       </mesh>
     </group>
   );
 }
 
-function WetFloorPuddle({ position }) {
+function WetFloorPuddle({ position, resolved }) {
   return (
     <group position={position}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.012, 0]}
+        scale={resolved ? 0.001 : 1}
+      >
         <circleGeometry args={[0.9, 32]} />
         <meshStandardMaterial color="#4f7fa8" roughness={0.1} metalness={0.3} transparent opacity={0.55} />
       </mesh>
       <mesh position={[0.9, 0.4, -0.5]} rotation={[0, -0.6, 0]}>
         <coneGeometry args={[0.3, 0.55, 4]} />
-        <meshStandardMaterial color="#f2b705" />
+        <meshStandardMaterial color={resolved ? "#4b5563" : "#f2b705"} />
       </mesh>
     </group>
   );
 }
 
-function OverloadedOutlet({ position }) {
+function OverloadedOutlet({ position, resolved }) {
   const sparkRef = useRef(null);
   useFrame(({ clock }) => {
     if (sparkRef.current) {
-      sparkRef.current.intensity = 0.3 + Math.max(0, Math.sin(clock.getElapsedTime() * 11)) * 1.2;
+      sparkRef.current.intensity = resolved
+        ? 0
+        : 0.3 + Math.max(0, Math.sin(clock.getElapsedTime() * 11)) * 1.2;
     }
   });
-  const plugAngles = [-0.5, -0.15, 0.2, 0.5];
+  const plugAngles = resolved ? [-0.15, 0.15] : [-0.5, -0.15, 0.2, 0.5];
   return (
     <group position={position}>
       <mesh castShadow>
@@ -301,7 +399,7 @@ function OverloadedOutlet({ position }) {
       {plugAngles.map((a, i) => (
         <mesh key={i} position={[-0.2 + i * 0.14, 0.1, 0]} rotation={[0, 0, a]} castShadow>
           <boxGeometry args={[0.05, 0.16, 0.1]} />
-          <meshStandardMaterial color="#1f2937" />
+          <meshStandardMaterial color={resolved ? "#4b5563" : "#1f2937"} />
         </mesh>
       ))}
       <pointLight ref={sparkRef} position={[0, 0.1, 0.1]} color="#ffb020" distance={1.2} intensity={0.5} />
@@ -379,7 +477,7 @@ function VentDuct({ position }) {
   );
 }
 
-function BlockedExit({ position }) {
+function BlockedExit({ position, resolved }) {
   const crateOffsets = [
     [-0.25, 0.25, 0],
     [0.25, 0.25, 0.1],
@@ -393,14 +491,19 @@ function BlockedExit({ position }) {
       </mesh>
       <mesh position={[0, 2.4, -0.05]}>
         <boxGeometry args={[0.9, 0.28, 0.06]} />
-        <meshStandardMaterial color="#16a34a" emissive="#16a34a" emissiveIntensity={0.8} />
+        <meshStandardMaterial
+          color="#16a34a"
+          emissive="#16a34a"
+          emissiveIntensity={resolved ? 1.4 : 0.8}
+        />
       </mesh>
-      {crateOffsets.map((p, i) => (
-        <mesh key={i} position={p} castShadow>
-          <boxGeometry args={[0.5, 0.5, 0.5]} />
-          <meshStandardMaterial color="#a16207" roughness={0.8} />
-        </mesh>
-      ))}
+      {!resolved &&
+        crateOffsets.map((p, i) => (
+          <mesh key={i} position={p} castShadow>
+            <boxGeometry args={[0.5, 0.5, 0.5]} />
+            <meshStandardMaterial color="#a16207" roughness={0.8} />
+          </mesh>
+        ))}
     </group>
   );
 }
@@ -413,7 +516,7 @@ const STATION_MODELS = {
   gas: GasCylinderRack,
 };
 
-export default function Factory({ theme, stations, onFloorClick }) {
+export default function Factory({ theme, stations, foundIds, onFloorClick }) {
   return (
     <group>
       <Floor color={theme.floorColor} onFloorClick={onFloorClick} />
@@ -437,14 +540,14 @@ export default function Factory({ theme, stations, onFloorClick }) {
       <LockoutStation position={[-12, 0, -2]} />
 
       {/* Elektr hududi atrofidagi qo'shimcha xavflar */}
-      <DamagedCable position={[-3.5, 0.1, -3]} />
-      <WetFloorPuddle position={[3.5, 0, -3]} />
-      <OverloadedOutlet position={[2, 0.5, 1]} />
+      <DamagedCable position={[-3.5, 0.1, -3]} resolved={foundIds.includes("cable")} />
+      <WetFloorPuddle position={[3.5, 0, -3]} resolved={foundIds.includes("wetfloor")} />
+      <OverloadedOutlet position={[2, 0.5, 1]} resolved={foundIds.includes("overload")} />
 
       {/* Yong'in hududi atrofidagi qo'shimcha xavflar */}
       <ExtinguisherStation position={[6.5, 0, -2]} />
       <VentDuct position={[12.5, 1.4, -2]} />
-      <BlockedExit position={[9.5, 0, 1.5]} />
+      <BlockedExit position={[9.5, 0, 1.5]} resolved={foundIds.includes("exit")} />
     </group>
   );
 }

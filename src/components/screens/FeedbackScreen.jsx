@@ -1,3 +1,4 @@
+import { CheckCircle2, TriangleAlert, ArrowRight } from "lucide-react";
 import { content } from "@/lib/content";
 import Logo from "@/components/ui/Logo";
 
@@ -20,7 +21,8 @@ export default function FeedbackScreen({ hazards, foundIds, violations, onContin
 
         {found.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-emerald-700">
+              <CheckCircle2 size={16} />
               {t.hazardsFoundLabel}
             </h3>
             <ul className="mt-3 space-y-3">
@@ -36,7 +38,8 @@ export default function FeedbackScreen({ hazards, foundIds, violations, onContin
 
         {missed.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-red-700">
+            <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-red-700">
+              <TriangleAlert size={16} />
               {t.hazardsMissedLabel}
             </h3>
             <ul className="mt-3 space-y-3">
@@ -52,9 +55,10 @@ export default function FeedbackScreen({ hazards, foundIds, violations, onContin
 
         <button
           onClick={onContinue}
-          className="mt-8 w-full rounded-full bg-brand-navy px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-brand-navy-light"
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-full bg-brand-navy px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-brand-navy-light"
         >
           {t.continueButton}
+          <ArrowRight size={18} />
         </button>
       </div>
     </div>

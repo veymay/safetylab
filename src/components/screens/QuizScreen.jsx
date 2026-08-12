@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { content } from "@/lib/content";
 import { playQuizCorrect, playQuizIncorrect } from "@/lib/sound";
 import Logo from "@/components/ui/Logo";
@@ -67,12 +68,14 @@ export default function QuizScreen({ quiz, onFinish }) {
                     >
                       <span>{option}</span>
                       {submitted && isCorrectOption && (
-                        <span className="ml-3 shrink-0 text-xs font-bold text-emerald-700">
+                        <span className="ml-3 flex shrink-0 items-center gap-1 text-xs font-bold text-emerald-700">
+                          <CheckCircle2 size={14} />
                           {t.correctLabel}
                         </span>
                       )}
                       {submitted && isSelected && !isCorrectOption && (
-                        <span className="ml-3 shrink-0 text-xs font-bold text-red-700">
+                        <span className="ml-3 flex shrink-0 items-center gap-1 text-xs font-bold text-red-700">
+                          <XCircle size={14} />
                           {t.incorrectLabel}
                         </span>
                       )}
