@@ -124,6 +124,18 @@ export const hazards = [
   },
 ];
 
+// Romb bosish o'rniga jismonan bajariladigan vazifa: yukni ko'tarib,
+// belgilangan (sariq) maydonga olib borib qo'yish. Shuning uchun
+// `hazards` massividan alohida — Experience.jsx bu xavfni o'z maxsus
+// interaktiv mexanikasi (CrateStack/DropPallet) orqali boshqaradi.
+export const liftingHazard = {
+  id: "lifting",
+  title: "Og'ir yukni to'g'ri ko'tarish qoidalari",
+  description:
+    "Og'ir yukni ko'tarishda beliningizni emas, tizzalaringizni buking va yukni tanangizga yaqin tuting. Keskin burilish va egilishlardan saqlaning. Juda og'ir yukni yolg'iz emas, boshqa xodim yordamida yoki ko'tarish uskunasi bilan tashing.",
+  position: [-6, 1, -0.8],
+};
+
 export const quiz = [
   {
     question:
@@ -275,6 +287,16 @@ export const quiz = [
       "Har doim ochiq va to'siqsiz",
       "Faqat rahbariyat uchun ochiq",
       "Ularning holati muhim emas",
+    ],
+    correctIndex: 1,
+  },
+  {
+    question: "Og'ir yukni yerdan ko'tarayotganda to'g'ri texnika qanday?",
+    options: [
+      "Belni bukib, tizzalarni tik ushlab ko'tarish",
+      "Tizzalarni bukib, yukni tanaga yaqin tutib ko'tarish",
+      "Yukni imkon qadar tanadan uzoqroq tutish",
+      "Texnika farqi yo'q, tezroq ko'tarish muhim",
     ],
     correctIndex: 1,
   },

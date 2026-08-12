@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createXRStore } from "@react-three/xr";
-import { theme, stations, hazards, quiz } from "@/lib/environment";
+import { theme, stations, hazards, liftingHazard, quiz } from "@/lib/environment";
 import { computeScore } from "@/lib/scenario";
 import { useXRSupport } from "@/lib/useXRSupport";
 import { playHazardFound, playDangerAlert } from "@/lib/sound";
@@ -11,6 +11,7 @@ import InstructionsScreen from "@/components/screens/InstructionsScreen";
 import FeedbackScreen from "@/components/screens/FeedbackScreen";
 import QuizScreen from "@/components/screens/QuizScreen";
 import ResultScreen from "@/components/screens/ResultScreen";
+import SceneErrorBoundary from "@/components/scene/ErrorBoundary";
 
 const Experience = dynamic(() => import("@/components/scene/Experience"), {
   ssr: false,
@@ -29,7 +30,7 @@ const STAGES = {
   RESULT: "result",
 };
 
-const allHazardDefs = [...stations.map((s) => s.hazard), ...hazards];
+const allHazardDefs = [...stations.map((s) => s.hazard), ...hazards, liftingHazard];
 
 export default function TrainingApp() {
   const [stage, setStage] = useState(STAGES.INSTRUCTIONS);
@@ -38,7 +39,22 @@ export default function TrainingApp() {
   const [activeHazardId, setActiveHazardId] = useState(null);
   const [breakdown, setBreakdown] = useState(null);
 
-  const xrStore = useMemo(() => createXRStore({ emulate: false }), []);
+  const xrStore = useMemo(
+    () =>
+      createXRStore({
+        emulate: false,
+        // Standart holatda qo'l kuzatuvi (hand-tracking) uchun nur uzunligi
+        // atigi 20sm bilan cheklangan (kontrollerlar esa cheksiz uzun nurga
+        // ega) — shu sabab uzoqdagi narsalarni faqat joystik bilan bosib
+        // bo'lardi. Xonaning kattaligiga mos ravishda uzaytiramiz.
+        hand: {
+          rayPointer: {
+            rayModel: { maxLength: 20 },
+          },
+        },
+      }),
+    []
+  );
   const xrSupported = useXRSupport();
 
   function enterFullscreen() {
@@ -83,6 +99,10 @@ export default function TrainingApp() {
     setViolations((v) => v + 1);
   }
 
+  function handleDangerTick() {
+    playDangerAlert();
+  }
+
   function handleQuizFinish(correct, total) {
     setBreakdown(
       computeScore({
@@ -125,21 +145,24 @@ export default function TrainingApp() {
 
   return (
     <div className="relative h-dvh w-full">
-      <Experience
-        theme={theme}
-        stations={stations}
-        hazards={hazards}
-        foundIds={foundIds}
-        hazardsTotal={allHazardDefs.length}
-        violations={violations}
-        activeHazard={activeHazard}
-        onHazardSelect={handleHazardSelect}
-        onHazardAutoFound={handleHazardAutoFound}
-        onCloseHazardInfo={() => setActiveHazardId(null)}
-        onDangerEnter={handleDangerEnter}
-        onFinish={() => setStage(STAGES.FEEDBACK)}
-        xrStore={xrStore}
-      />
+      <SceneErrorBoundary>
+        <Experience
+          theme={theme}
+          stations={stations}
+          hazards={hazards}
+          foundIds={foundIds}
+          hazardsTotal={allHazardDefs.length}
+          violations={violations}
+          activeHazard={activeHazard}
+          onHazardSelect={handleHazardSelect}
+          onHazardAutoFound={handleHazardAutoFound}
+          onCloseHazardInfo={() => setActiveHazardId(null)}
+          onDangerEnter={handleDangerEnter}
+          onDangerTick={handleDangerTick}
+          onFinish={() => setStage(STAGES.FEEDBACK)}
+          xrStore={xrStore}
+        />
+      </SceneErrorBoundary>
     </div>
   );
 }

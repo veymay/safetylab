@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { Text, RoundedBox } from "@react-three/drei";
 
 const ROOM_HALF_WIDTH = 15;
 const ROOM_BACK_Z = -10;
@@ -37,12 +37,11 @@ function ZoneRing({ position, radius, color }) {
 function WallPoster({ position, rotationY = 0, title, body, accent }) {
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      <mesh>
-        <boxGeometry args={[1.7, 1.15, 0.04]} />
+      <RoundedBox args={[1.7, 1.15, 0.06]} radius={0.015} smoothness={4}>
         <meshStandardMaterial color="#f4f1ea" roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 0.42, 0.021]}>
-        <boxGeometry args={[1.7, 0.26, 0.01]} />
+      </RoundedBox>
+      <mesh position={[0, 0.42, 0.023]}>
+        <boxGeometry args={[1.5, 0.26, 0.01]} />
         <meshStandardMaterial color={accent} />
       </mesh>
       <Text

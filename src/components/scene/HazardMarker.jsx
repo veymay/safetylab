@@ -35,10 +35,10 @@ export default function HazardMarker({ position, found, onSelect }) {
         <meshStandardMaterial
           color={color}
           emissive={color}
-          emissiveIntensity={found ? 0.4 : 0.9}
+          emissiveIntensity={found ? 0.9 : 1.6}
+          toneMapped={false}
         />
       </mesh>
-      <pointLight color={color} intensity={found ? 0.4 : 1.2} distance={2.5} />
     </group>
   );
 }

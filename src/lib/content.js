@@ -13,8 +13,8 @@ export const content = {
     ctaHow: "Qanday ishlaydi",
     stats: [
       { value: "1", label: "yaxlit real sex" },
-      { value: "13", label: "xavf turi bo'yicha mashq" },
-      { value: "15", label: "yakuniy test savoli" },
+      { value: "14", label: "xavf turi bo'yicha mashq" },
+      { value: "16", label: "yakuniy test savoli" },
       { value: "0", label: "o'rnatiladigan ilova" },
     ],
     featuresTitle: "Platforma haqida",
@@ -66,6 +66,7 @@ export const content = {
       "Harakatlanish uchun pol yuzasida istalgan nuqtani bosing.",
       "Yirik uskunalar (pres, elektr shchiti, gaz ombori) shunchaki yaqinlashsangiz avtomatik aniqlanadi — bosish shart emas.",
       "Boshqa xavf manbalarini aniqlash uchun ularning ustiga bosing.",
+      "Yukni ko'tarish uchun quti ustiga bosing, so'ng uni sariq belgilangan maydonga olib borib qo'ying.",
     ],
     continueButton: "Mashg'ulotni boshlash",
   },

@@ -1,8 +1,8 @@
-import { TriangleAlert, Move3d, Footprints, Radar, MousePointerClick } from "lucide-react";
+import { TriangleAlert, Move3d, Footprints, Radar, MousePointerClick, PackageOpen } from "lucide-react";
 import { content } from "@/lib/content";
 import Logo from "@/components/ui/Logo";
 
-const CONTROL_ICONS = [Move3d, Footprints, Radar, MousePointerClick];
+const CONTROL_ICONS = [Move3d, Footprints, Radar, MousePointerClick, PackageOpen];
 
 export default function InstructionsScreen({ onContinue }) {
   const t = content.instructions;

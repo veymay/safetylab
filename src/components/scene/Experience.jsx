@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Text, Billboard } from "@react-three/drei";
+import { OrbitControls, Text, Billboard, RoundedBox } from "@react-three/drei";
 import { XR, XROrigin, useXR } from "@react-three/xr";
 import * as THREE from "three";
 import Factory from "./Factory";
@@ -16,28 +16,51 @@ const START_POSITION = new THREE.Vector3(0, 0, 5);
 const ZONE_RANK = { safe: 0, warning: 1, danger: 2 };
 const ZONE_ALERTS = {
   warning: { color: "#f2b705", label: "DIQQAT\nXavfli uskunaga yaqinlashmoqdasiz" },
-  danger: { color: "#e5342a", label: "XAVFLI HUDUD\nZudlik bilan orqaga qayting!" },
+  danger: { color: "#e5342a", label: "XAVFLI HUDUD!\nZudlik bilan orqaga qayting!" },
 };
-const REACH_DURATION = 0.5;
+const DANGER_SOUND_INTERVAL = 0.9;
+
+const LIFTING_ID = "lifting";
+const PICKUP_POS = [-6, 0, 4.5];
+const DROPZONE_POS = [-6, 0, -0.8];
+const DROP_RADIUS = 1.4;
 
 /* ---------------- O'yin ichi HUD (kalla bilan birga yuradi) ---------------- */
 
+// Diqqat: bu komponent zonaga kirib-chiqqan sari qayta-qayta
+// mount/unmount bo'lmasligi kerak — har bir mount yangi GPU geometriyasi
+// yaratadi, va tez-tez takrorlansa (xona bo'ylab yurganda ko'p marta
+// sodir bo'ladi) mobil GPU drayverini haddan tashqari band qilib,
+// WebGL kontekstini yo'qotishga olib kelishi mumkin. Shu sabab u doim
+// mount holida qoladi, faqat `visible` va material/matn qiymatlari
+// almashtiriladi.
 function ViewportAlert({ zone }) {
-  if (zone === "safe") return null;
-  const alert = ZONE_ALERTS[zone];
+  const groupRef = useRef(null);
+  const alert = ZONE_ALERTS[zone] ?? ZONE_ALERTS.danger;
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+    groupRef.current.visible = zone !== "safe";
+    if (zone === "danger") {
+      const pulse = 1 + Math.sin(clock.getElapsedTime() * 7) * 0.08;
+      groupRef.current.scale.setScalar(pulse);
+    } else {
+      groupRef.current.scale.setScalar(1);
+    }
+  });
+
   return (
-    <group position={[0, 0.3, 0]}>
-      <mesh raycast={() => null} renderOrder={999}>
-        <planeGeometry args={[1.1, 0.34]} />
-        <meshBasicMaterial color={alert.color} transparent opacity={0.9} depthTest={false} />
-      </mesh>
+    <group ref={groupRef} position={[0, -0.05, 0]}>
+      <RoundedBox args={[1.5, 0.5, 0.13]} radius={0.04} smoothness={4} raycast={() => null} renderOrder={999}>
+        <meshBasicMaterial color={alert.color} transparent opacity={0.92} depthTest={false} />
+      </RoundedBox>
       <Text
-        position={[0, 0, 0.005]}
-        fontSize={0.062}
+        position={[0, 0, 0.075]}
+        fontSize={0.08}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1}
+        maxWidth={1.4}
         textAlign="center"
         material-depthTest={false}
         renderOrder={1000}
@@ -50,19 +73,23 @@ function ViewportAlert({ zone }) {
 }
 
 function StatusPanel({ hazardsFound, hazardsTotal, violations, allFound, onFinish }) {
-  const panelH = allFound ? 0.46 : 0.32;
+  // Panel balandligi doim bitta qiymatda qoladi (allFound bilan
+  // o'zgarmaydi) — aks holda RoundedBox geometriyasi har safar qayta
+  // yaratiladi. Buning o'rniga faqat "Yakunlash" tugmasi visible bilan
+  // ko'rsatiladi/yashiriladi.
+  const panelH = 0.48;
   return (
-    <group position={[-0.58, -0.3, 0]}>
-      <mesh raycast={() => null} renderOrder={999}>
-        <planeGeometry args={[0.6, panelH]} />
+    <group position={[0.6, 0.3, 0]}>
+      <RoundedBox args={[0.64, panelH, 0.11]} radius={0.03} smoothness={4} raycast={() => null} renderOrder={999}>
         <meshBasicMaterial color="#0f2134" transparent opacity={0.85} depthTest={false} />
-      </mesh>
+      </RoundedBox>
       <Text
-        position={[0, panelH / 2 - 0.075, 0.003]}
-        fontSize={0.044}
+        position={[0, panelH / 2 - 0.09, 0.065]}
+        fontSize={0.052}
         color="#cba86a"
         anchorX="center"
         anchorY="middle"
+        maxWidth={0.58}
         material-depthTest={false}
         renderOrder={1000}
         raycast={() => null}
@@ -70,80 +97,92 @@ function StatusPanel({ hazardsFound, hazardsTotal, violations, allFound, onFinis
         {`XAVFLAR ${hazardsFound}/${hazardsTotal}`}
       </Text>
       <Text
-        position={[0, panelH / 2 - 0.16, 0.003]}
-        fontSize={0.038}
+        position={[0, panelH / 2 - 0.19, 0.065]}
+        fontSize={0.046}
         color={violations > 0 ? "#f87171" : "#86efac"}
         anchorX="center"
         anchorY="middle"
+        maxWidth={0.58}
         material-depthTest={false}
         renderOrder={1000}
         raycast={() => null}
       >
         {`Qoidabuzarlik: ${violations}`}
       </Text>
-      {allFound && (
-        <group
-          position={[0, -panelH / 2 + 0.08, 0.003]}
-          onClick={(e) => {
-            e.stopPropagation();
-            onFinish();
-          }}
+      <group
+        visible={allFound}
+        position={[0, -panelH / 2 + 0.09, 0.065]}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (allFound) onFinish();
+        }}
+      >
+        <RoundedBox args={[0.58, 0.14, 0.14]} radius={0.04} smoothness={4} renderOrder={999}>
+          <meshBasicMaterial color="#cba86a" depthTest={false} />
+        </RoundedBox>
+        <Text
+          position={[0, 0, 0.08]}
+          fontSize={0.046}
+          color="#0f2134"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={0.52}
+          material-depthTest={false}
+          renderOrder={1001}
+          raycast={() => null}
         >
-          <mesh renderOrder={999}>
-            <planeGeometry args={[0.54, 0.13]} />
-            <meshBasicMaterial color="#cba86a" depthTest={false} />
-          </mesh>
-          <Text
-            position={[0, 0, 0.003]}
-            fontSize={0.038}
-            color="#0f2134"
-            anchorX="center"
-            anchorY="middle"
-            material-depthTest={false}
-            renderOrder={1001}
-            raycast={() => null}
-          >
-            MASHQNI YAKUNLASH
-          </Text>
-        </group>
-      )}
+          MASHQNI YAKUNLASH
+        </Text>
+      </group>
     </group>
   );
 }
 
-function FirstPersonHand({ reachRef }) {
-  const groupRef = useRef(null);
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const hump = Math.sin(Math.min(reachRef.current, 1) * Math.PI) * (reachRef.current > 0 ? 1 : 0);
-    groupRef.current.position.set(0.3 - hump * 0.18, -0.36 + hump * 0.1, -0.15 - hump * 0.32);
-    groupRef.current.rotation.set(-0.3 - hump * 0.5, 0.15, -0.2);
-  });
+/* ---------------- Yukni ko'tarish va joyiga qo'yish ---------------- */
+
+function CrateStack({ onPick }) {
+  const offsets = [
+    [-0.2, 0.225, 0],
+    [0.2, 0.225, 0.1],
+    [0, 0.675, 0.05],
+  ];
   return (
-    <group ref={groupRef}>
-      {/* bilak */}
-      <mesh raycast={() => null}>
-        <capsuleGeometry args={[0.055, 0.32, 4, 8]} />
-        <meshStandardMaterial color="#d8a878" roughness={0.7} />
-      </mesh>
-      {/* kaft */}
-      <mesh position={[0, 0.19, 0]} raycast={() => null}>
-        <boxGeometry args={[0.1, 0.11, 0.045]} />
-        <meshStandardMaterial color="#d8a878" roughness={0.7} />
-      </mesh>
-      {/* barmoqlar */}
-      {[-0.03, -0.01, 0.01, 0.03].map((x, i) => (
-        <mesh key={i} position={[x, 0.25, 0.005]} raycast={() => null}>
-          <capsuleGeometry args={[0.011, 0.05, 4, 6]} />
-          <meshStandardMaterial color="#d8a878" roughness={0.7} />
-        </mesh>
+    <group
+      position={PICKUP_POS}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPick();
+      }}
+    >
+      {offsets.map((p, i) => (
+        <RoundedBox key={i} args={[0.45, 0.45, 0.45]} radius={0.03} smoothness={2} position={p} castShadow>
+          <meshStandardMaterial color="#a16207" roughness={0.8} />
+        </RoundedBox>
       ))}
-      {/* qo'lqop manjeti */}
-      <mesh position={[0, 0.08, 0]} raycast={() => null}>
-        <cylinderGeometry args={[0.062, 0.058, 0.09, 12]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.6} />
+    </group>
+  );
+}
+
+function DropPallet() {
+  return (
+    <group position={DROPZONE_POS}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0]}>
+        <planeGeometry args={[1.5, 1.5]} />
+        <meshStandardMaterial color="#facc15" roughness={0.7} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+        <ringGeometry args={[0.55, 0.62, 4]} />
+        <meshBasicMaterial color="#1f2937" />
       </mesh>
     </group>
+  );
+}
+
+function CarriedCrate() {
+  return (
+    <RoundedBox args={[0.32, 0.32, 0.32]} radius={0.02} smoothness={2} position={[0.22, -0.34, -0.1]} rotation={[0.1, 0.35, 0]}>
+      <meshStandardMaterial color="#a16207" roughness={0.8} />
+    </RoundedBox>
   );
 }
 
@@ -153,13 +192,15 @@ function PlayerController({
   stations,
   moveTargetRef,
   onDangerEnter,
+  onDangerTick,
   onStationNoticed,
   hazardsFound,
   hazardsTotal,
   violations,
   allFound,
   onFinish,
-  reachTrigger,
+  carrying,
+  onDrop,
 }) {
   const { camera } = useThree();
   const isPresenting = useXR((s) => !!s.session);
@@ -170,11 +211,15 @@ function PlayerController({
   const stationZones = useRef({});
   const noticedStations = useRef(new Set());
   const hudAnchorRef = useRef(null);
-  const handAnchorRef = useRef(null);
+  const carryAnchorRef = useRef(null);
   const forwardVec = useRef(new THREE.Vector3());
-  const reachTimer = useRef(-1);
-  const lastSeenTrigger = useRef(0);
+  const dangerSoundTimer = useRef(0);
+  const droppedGuard = useRef(false);
   const [vrZone, setVrZone] = useState("safe");
+
+  useEffect(() => {
+    if (carrying) droppedGuard.current = false;
+  }, [carrying]);
 
   useEffect(() => {
     if (!isPresenting) {
@@ -228,13 +273,23 @@ function PlayerController({
       setVrZone(worstZone);
     }
 
-    if (reachTrigger.current !== lastSeenTrigger.current) {
-      lastSeenTrigger.current = reachTrigger.current;
-      reachTimer.current = 0;
+    if (worstZone === "danger") {
+      dangerSoundTimer.current += delta;
+      if (dangerSoundTimer.current >= DANGER_SOUND_INTERVAL) {
+        dangerSoundTimer.current = 0;
+        onDangerTick();
+      }
+    } else {
+      dangerSoundTimer.current = 0;
     }
-    if (reachTimer.current >= 0) {
-      reachTimer.current += delta / REACH_DURATION;
-      if (reachTimer.current > 1) reachTimer.current = -1;
+
+    if (carrying && !droppedGuard.current) {
+      const dx = rigPos.current.x - DROPZONE_POS[0];
+      const dz = rigPos.current.z - DROPZONE_POS[2];
+      if (Math.sqrt(dx * dx + dz * dz) < DROP_RADIUS) {
+        droppedGuard.current = true;
+        onDrop();
+      }
     }
 
     camera.getWorldDirection(forwardVec.current);
@@ -242,9 +297,9 @@ function PlayerController({
       hudAnchorRef.current.position.copy(camera.position).addScaledVector(forwardVec.current, 1.4);
       hudAnchorRef.current.quaternion.copy(camera.quaternion);
     }
-    if (handAnchorRef.current) {
-      handAnchorRef.current.position.copy(camera.position).addScaledVector(forwardVec.current, 0.55);
-      handAnchorRef.current.quaternion.copy(camera.quaternion);
+    if (carryAnchorRef.current) {
+      carryAnchorRef.current.position.copy(camera.position).addScaledVector(forwardVec.current, 0.55);
+      carryAnchorRef.current.quaternion.copy(camera.quaternion);
     }
 
     if (!isPresenting) controlsRef.current?.update();
@@ -272,8 +327,8 @@ function PlayerController({
           onFinish={onFinish}
         />
       </group>
-      <group ref={handAnchorRef}>
-        <FirstPersonHand reachRef={reachTimer} />
+      <group ref={carryAnchorRef} visible={carrying}>
+        <CarriedCrate />
       </group>
     </>
   );
@@ -281,17 +336,27 @@ function PlayerController({
 
 /* ---------------- Xavf haqida suzuvchi ma'lumot ---------------- */
 
+// Xuddi ViewportAlert kabi: har xavf bosilganda/yopilganda qayta-qayta
+// mount/unmount bo'lmasligi uchun doim mount holida qoladi, faqat
+// ko'rinishi va matni almashtiriladi.
 function HazardTooltip({ hazard, onClose }) {
-  if (!hazard) return null;
-  const shortDescription = hazard.description.split(". ")[0] + ".";
+  const visible = Boolean(hazard);
+  const anchorPos = hazard ? [hazard.position[0], hazard.position[1] + 0.6, hazard.position[2]] : [0, 1.6, 0];
+  const title = hazard?.title ?? "";
+  const shortDescription = hazard ? hazard.description.split(". ")[0] + "." : "";
+
+  function handleClose(e) {
+    e.stopPropagation();
+    if (hazard) onClose();
+  }
+
   return (
-    <Billboard position={[hazard.position[0], hazard.position[1] + 0.6, hazard.position[2]]}>
-      <mesh renderOrder={998}>
-        <planeGeometry args={[1.5, 0.55]} />
+    <Billboard position={anchorPos} visible={visible}>
+      <RoundedBox args={[1.5, 0.55, 0.12]} radius={0.035} smoothness={4} renderOrder={998}>
         <meshBasicMaterial color="#0f2134" transparent opacity={0.92} depthTest={false} />
-      </mesh>
+      </RoundedBox>
       <Text
-        position={[0, 0.16, 0.003]}
+        position={[0, 0.16, 0.07]}
         fontSize={0.075}
         color="#cba86a"
         anchorX="center"
@@ -301,10 +366,10 @@ function HazardTooltip({ hazard, onClose }) {
         material-depthTest={false}
         renderOrder={999}
       >
-        {hazard.title}
+        {title}
       </Text>
       <Text
-        position={[0, -0.06, 0.003]}
+        position={[0, -0.06, 0.07]}
         fontSize={0.058}
         color="#ffffff"
         anchorX="center"
@@ -317,7 +382,7 @@ function HazardTooltip({ hazard, onClose }) {
       >
         {shortDescription}
       </Text>
-      <group position={[0.62, 0.2, 0.003]} onClick={(e) => { e.stopPropagation(); onClose(); }}>
+      <group position={[0.62, 0.2, 0.07]} onClick={handleClose}>
         <mesh renderOrder={999}>
           <circleGeometry args={[0.06, 16]} />
           <meshBasicMaterial color="#e5342a" depthTest={false} />
@@ -348,6 +413,7 @@ export default function Experience({
   onHazardSelect,
   onHazardAutoFound,
   onDangerEnter,
+  onDangerTick,
   activeHazard,
   onCloseHazardInfo,
   onFinish,
@@ -356,9 +422,35 @@ export default function Experience({
   xrStore,
 }) {
   const moveTargetRef = useRef(null);
-  const reachTrigger = useRef(0);
   const xrSupported = useXRSupport();
   const allFound = foundIds.length >= hazardsTotal;
+  const [carrying, setCarrying] = useState(false);
+  const liftingDone = foundIds.includes(LIFTING_ID);
+  const [fatalError, setFatalError] = useState(null);
+
+  // Diagnostika: keyingi safar qora ekran chiqsa, taxmin qilmasdan aniq
+  // xato xabarini ko'rish uchun (WebGL kontekst yo'qolishi ham shu yerda ushlanadi).
+  useEffect(() => {
+    function handleError(e) {
+      setFatalError(`JS xatosi: ${e?.error?.message ?? e?.message ?? "noma'lum"}`);
+    }
+    function handleRejection(e) {
+      setFatalError(`Promise xatosi: ${e?.reason?.message ?? e?.reason ?? "noma'lum"}`);
+    }
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleRejection);
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleRejection);
+    };
+  }, []);
+
+  function handleCanvasCreated({ gl }) {
+    gl.domElement.addEventListener("webglcontextlost", (e) => {
+      e.preventDefault();
+      setFatalError("WebGL konteksti yo'qoldi (GPU/drayver muammosi).");
+    });
+  }
 
   useEffect(() => {
     if (!xrSupported) return;
@@ -386,23 +478,35 @@ export default function Experience({
     moveTargetRef.current = e.point.clone();
   }
 
-  function handleHazardClick(id) {
-    reachTrigger.current += 1;
-    onHazardSelect(id);
+  function handleCratePick() {
+    if (carrying || liftingDone) return;
+    setCarrying(true);
   }
 
-  function handleFinishClick() {
-    reachTrigger.current += 1;
-    onFinish();
+  function handleCrateDrop() {
+    setCarrying(false);
+    onHazardSelect(LIFTING_ID);
   }
 
   return (
     <div className="relative h-dvh w-full">
+      {fatalError && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/90 px-6 text-center text-white">
+          <p className="text-sm font-semibold uppercase tracking-widest text-red-400">
+            Sahna nosozligi aniqlandi
+          </p>
+          <p className="mt-3 max-w-lg text-sm text-slate-300">{fatalError}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Iltimos, shu xabarni suratga oling yoki nusxa ko&apos;chiring.
+          </p>
+        </div>
+      )}
       <Canvas
         shadows
         dpr={[1, 1.5]}
         camera={{ position: [0, EYE_HEIGHT, 8], fov: 60 }}
         style={{ touchAction: "none" }}
+        onCreated={handleCanvasCreated}
       >
         <XR store={xrStore}>
           <color attach="background" args={[theme.fogColor]} />
@@ -427,9 +531,12 @@ export default function Experience({
               key={hazard.id}
               position={hazard.position}
               found={foundIds.includes(hazard.id)}
-              onSelect={() => handleHazardClick(hazard.id)}
+              onSelect={() => onHazardSelect(hazard.id)}
             />
           ))}
+
+          {!carrying && !liftingDone && <CrateStack onPick={handleCratePick} />}
+          <DropPallet />
 
           <HazardTooltip hazard={activeHazard} onClose={onCloseHazardInfo} />
 
@@ -437,13 +544,15 @@ export default function Experience({
             stations={stations}
             moveTargetRef={moveTargetRef}
             onDangerEnter={onDangerEnter}
+            onDangerTick={onDangerTick}
             onStationNoticed={onHazardAutoFound}
             hazardsFound={foundIds.length}
             hazardsTotal={hazardsTotal}
             violations={violations}
             allFound={allFound}
-            onFinish={handleFinishClick}
-            reachTrigger={reachTrigger}
+            onFinish={onFinish}
+            carrying={carrying}
+            onDrop={handleCrateDrop}
           />
         </XR>
       </Canvas>
