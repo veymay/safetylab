@@ -352,9 +352,9 @@ function PlayerController({
 // ko'rinishi va matni almashtiriladi.
 function HazardTooltip({ hazard, onClose }) {
   const visible = Boolean(hazard);
-  const anchorPos = hazard ? [hazard.position[0], hazard.position[1] + 0.6, hazard.position[2]] : [0, 1.6, 0];
+  const anchorPos = hazard ? [hazard.position[0], hazard.position[1] + 0.75, hazard.position[2]] : [0, 1.6, 0];
   const title = hazard?.title ?? "";
-  const shortDescription = hazard ? hazard.description.split(". ")[0] + "." : "";
+  const description = hazard?.description ?? "";
 
   function handleClose(e) {
     e.stopPropagation();
@@ -364,21 +364,21 @@ function HazardTooltip({ hazard, onClose }) {
   return (
     <Billboard position={anchorPos} visible={visible}>
       <RoundedBox
-        args={[1.5, 0.55, 0.12]}
-        radius={0.035}
+        args={[1.7, 1.0, 0.14]}
+        radius={0.04}
         smoothness={4}
         renderOrder={998}
         raycast={() => null}
       >
-        <meshBasicMaterial color="#0f2134" transparent opacity={0.92} depthTest={false} />
+        <meshBasicMaterial color="#0f2134" transparent opacity={0.94} depthTest={false} />
       </RoundedBox>
       <Text
-        position={[0, 0.16, 0.07]}
-        fontSize={0.075}
+        position={[0, 0.37, 0.08]}
+        fontSize={0.08}
         color="#cba86a"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.35}
+        maxWidth={1.5}
         textAlign="center"
         material-depthTest={false}
         renderOrder={999}
@@ -387,21 +387,21 @@ function HazardTooltip({ hazard, onClose }) {
         {title}
       </Text>
       <Text
-        position={[0, -0.06, 0.07]}
-        fontSize={0.058}
+        position={[0, 0.25, 0.08]}
+        fontSize={0.052}
         color="#ffffff"
         anchorX="center"
-        anchorY="middle"
-        maxWidth={1.35}
+        anchorY="top"
+        maxWidth={1.55}
         textAlign="center"
-        lineHeight={1.3}
+        lineHeight={1.4}
         material-depthTest={false}
         renderOrder={999}
         raycast={() => null}
       >
-        {shortDescription}
+        {description}
       </Text>
-      <group position={[0.62, 0.2, 0.07]} onClick={handleClose}>
+      <group position={[0.75, 0.42, 0.08]} onClick={handleClose}>
         <mesh renderOrder={999} raycast={visible ? undefined : () => null}>
           <circleGeometry args={[0.06, 16]} />
           <meshBasicMaterial color="#e5342a" depthTest={false} />
